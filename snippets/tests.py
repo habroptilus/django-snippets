@@ -1,34 +1,59 @@
+from django.contrib.auth import get_user_model
 from django.http import HttpRequest
-from django.test import TestCase
+from django.test import TestCase, Client, RequestFactory
 from django.urls import resolve
-from snippets.views import top, snippet_new, snippet_edit, snippet_detail
-# Create your tests here.
+from snippets.views import snippet_new, snippet_edit, snippet_detail
 
+from snippets.models import Snippet
+from snippets.views import top
 
-class TopPageViewTest(TestCase):
-    """リクエストをもらってリクエストを返すビュー関数topのテスト. """
-
-    def test_top_returns_200(self):
-        request = HttpRequest()
-        response = top(request)
-        self.assertEqual(response.status_code, 200)
-
-    def test_top_returns_expected_content(self):
-        request = HttpRequest()
-        response = top(request)
-        self.assertEqual(response.content, b"Hello World")
+UserModel = get_user_model()
 
 
 class TopPageTest(TestCase):
-    """ルーティング(urlとビュー関数を結びつける)のテスト"""
+    """ルーティング(urlとビュー関数を結びつける)とその中身のテスト"""
 
-    def test_top_returns_200(self):
-        response = self.client.get("/")  # DjangoのTestCaseが事前に読み込んでくれている
-        self.assertEqual(response.status_code, 200)
+    def test_top_page_returns_200_and_expected_title(self):
+        """200番がかえってきていること、指定した文字列が含まれていることを確認する"""
+        response = self.client.get(
+            "/")  # self.clientはDjangoのTestCaseが事前に読み込んでくれている
+        self.assertContains(response, "Djangoスニペット", status_code=200)
 
-    def test_top_returns_expected_content(self):
+    def test_top_page_users_expected_template(self):
+        """指定したtemplateを使用しているかを確認する"""
         response = self.client.get("/")
-        self.assertEqual(response.content, b"Hello World")
+        self.assertTemplateUsed(response, "snippets/top.html")
+
+
+class TopPageRenderSnippetsTest(TestCase):
+    def setUp(self):
+        # テストケースの終わりにこれらのレコードはロールバックされる
+        # setupとかtypoすると自動でテスト前に動いてくれない.正しくsetUpというメソッド名を指定する必要がある
+        self.user = UserModel.objects.create(
+            username="test_user1",
+            email="test@example.com",
+            password="passpass1234"
+        )
+        self.snippet = Snippet.objects.create(
+            title="test_title",
+            code="print('hello')",
+            description="description111",
+            created_by=self.user
+        )
+
+    def test_should_return_snippet_title(self):
+        """userを指定してtopページにリクエストしたらスニペットのtitleが表示されていること"""
+        request = RequestFactory().get("/")
+        request.user = self.user
+        response = top(request)
+        self.assertContains(response, self.snippet.title)
+
+    def test_should_return_username(self):
+        """usernameがresponseに含まれていること"""
+        request = RequestFactory().get("/")
+        request.user = self.user
+        response = top(request)
+        self.assertContains(response, self.user.username)
 
 
 class CreateSnippetTest(TestCase):

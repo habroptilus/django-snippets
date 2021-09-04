@@ -1,10 +1,14 @@
 from django.http import HttpResponse
-# from django.shortcuts import render
+from django.shortcuts import render
+from snippets.models import Snippet
 # Create your views here.
 
 
 def top(request):
-    return HttpResponse(b"Hello World")
+    """snippetの一覧を表示する"""
+    snippets = Snippet.objects.all()
+    context = {"snippets": snippets}  # htmlに渡すデータをdict形式で
+    return render(request, "snippets/top.html", context)
 
 
 def snippet_new(request):
