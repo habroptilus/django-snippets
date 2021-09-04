@@ -1,8 +1,7 @@
 from django.contrib.auth import get_user_model
-from django.http import HttpRequest
-from django.test import TestCase, Client, RequestFactory
+from django.test import TestCase, RequestFactory
 from django.urls import resolve
-from snippets.views import snippet_new, snippet_edit, snippet_detail
+from snippets.views import snippet_new, snippet_edit
 
 from snippets.models import Snippet
 from snippets.views import top
@@ -63,9 +62,29 @@ class CreateSnippetTest(TestCase):
 
 
 class SnippetDetailTest(TestCase):
-    def test_should_resolve_snippet_detail(self):
-        found = resolve("/snippets/1/")  # こっちは先頭のスラッシュを省略しない
-        self.assertEqual(snippet_detail, found.func)
+    def setUp(self):
+        # テストケースの終わりにこれらのレコードはロールバックされる
+        # setupとかtypoすると自動でテスト前に動いてくれない.正しくsetUpというメソッド名を指定する必要がある
+        self.user = UserModel.objects.create(
+            username="test_user1",
+            email="test@example.com",
+            password="passpass5678"
+        )
+        self.snippet = Snippet.objects.create(
+            title="test_title222",
+            code="print('hello222')",
+            description="description222",
+            created_by=self.user
+        )
+
+    def test_should_use_expected_template(self):
+        response = self.client.get(
+            f"/snippets/{self.snippet.id}/")  # 末尾のスラッシュ忘れがち
+        self.assertTemplateUsed(response, "snippets/snippet_detail.html")
+
+    def test_detail_page_returns_200_and_expected_head(self):
+        response = self.client.get(f"/snippets/{self.snippet.id}/")
+        self.assertContains(response, self.snippet.title, status_code=200)
 
 
 class EditSnippetTest(TestCase):
