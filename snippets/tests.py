@@ -1,7 +1,5 @@
 from django.contrib.auth import get_user_model
 from django.test import TestCase, RequestFactory
-from django.urls import resolve
-from snippets.views import snippet_new, snippet_edit
 
 from snippets.models import Snippet
 from snippets.views import top
@@ -56,9 +54,25 @@ class TopPageRenderSnippetsTest(TestCase):
 
 
 class CreateSnippetTest(TestCase):
-    def test_should_resolve_snippet_new(self):
-        found = resolve("/snippets/new/")  # こっちは先頭のスラッシュを省略しない
-        self.assertEqual(snippet_new, found.func)
+    def setUp(self):
+        self.user = UserModel.objects.create(
+            username="test_user1",
+            email="test@example.com",
+            password="passpass1234"
+        )
+        self.client.force_login(self.user)  # ユーザーログイン
+
+    def test_render_creation_form(self):
+        """getで呼ばれたときにフォームを表示する."""
+        response = self.client.get("/snippets/new/")  # 末尾のスラッシュを忘れない
+        self.assertContains(response, "スニペットの登録", status_code=200)
+
+    def test_create_snippet(self):
+        data = {"title": "タイトル", "code": "コード", "description": "解説"}
+        self.client.post("/snippets/new/", data)
+        snippet = Snippet.objects.get(title="タイトル")
+        self.assertEqual("コード", snippet.code)  # これ引数の順番大事？
+        self.assertEqual("解説", snippet.description)
 
 
 class SnippetDetailTest(TestCase):
@@ -88,6 +102,33 @@ class SnippetDetailTest(TestCase):
 
 
 class EditSnippetTest(TestCase):
-    def test_should_resolve_snippet_edit(self):
-        found = resolve("/snippets/1/edit/")  # こっちは先頭のスラッシュを省略しない
-        self.assertEqual(snippet_edit, found.func)
+    def setUp(self):
+        # テストケースの終わりにこれらのレコードはロールバックされる
+        # setupとかtypoすると自動でテスト前に動いてくれない.正しくsetUpというメソッド名を指定する必要がある
+        self.user = UserModel.objects.create(
+            username="test_user1",
+            email="test@example.com",
+            password="passpass5678"
+        )
+        self.snippet = Snippet.objects.create(
+            title="test_title222",
+            code="print('hello222')",
+            description="description222",
+            created_by=self.user
+        )
+
+        self.client.force_login(self.user)
+
+    def test_render_edit_form(self):
+        """getで呼ばれたときに編集フォームを表示する."""
+        response = self.client.get(
+            f"/snippets/{self.snippet.id}/edit/")  # 末尾のスラッシュを忘れない
+        self.assertContains(response, "スニペットの編集", status_code=200)
+
+    def test_edit_snippet(self):
+        data = {"title": "タイトルかえてやるぜ",
+                "code": "コードかえてやるぜ"}
+        self.client.post(f"/snippets/{self.snippet.id}/edit/", data)
+        snippet = Snippet.objects.get(id=self.snippet.id)
+        self.assertEqual("タイトルかえてやるぜ", snippet.title)
+        self.assertEqual("コードかえてやるぜ", snippet.code)
