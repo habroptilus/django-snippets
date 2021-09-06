@@ -142,3 +142,34 @@ class EditSnippetTest(TestCase):
         snippet = Snippet.objects.get(id=self.snippet.id)
         self.assertEqual("タイトルかえてやるぜ", snippet.title)
         self.assertEqual("コードかえてやるぜ", snippet.code)
+
+
+class CreateCommentTest(TestCase):
+    def setUp(self):
+        # テストケースの終わりにこれらのレコードはロールバックされる
+        # setupとかtypoすると自動でテスト前に動いてくれない.正しくsetUpというメソッド名を指定する必要がある
+        self.user = UserModel.objects.create(
+            username="test_user1",
+            email="test@example.com",
+            password="passpass5678"
+        )
+        self.snippet = Snippet.objects.create(
+            title="test_title222",
+            code="print('hello222')",
+            description="description222",
+            created_by=self.user
+        )
+        self.client.force_login(self.user)
+
+    def test_render_creation_form(self):
+        """getで呼ばれたときにフォームを表示する."""
+        response = self.client.get(
+            f"/snippets/{self.snippet.id}/comments/new/")  # 末尾のスラッシュを忘れない
+        self.assertContains(response, "コメント投稿", status_code=200)
+
+    def test_create_comment(self):
+        data = {"text": "comment11"}
+        self.client.post(f"/snippets/{self.snippet.id}/comments/new/", data)
+        comment = Comment.objects.get(text="comment11")
+        self.assertEqual(self.snippet, comment.commented_to)  # これ引数の順番大事？
+        self.assertEqual(self.user, comment.commented_by)
