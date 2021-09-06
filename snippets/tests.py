@@ -1,7 +1,7 @@
 from django.contrib.auth import get_user_model
 from django.test import TestCase, RequestFactory
 
-from snippets.models import Snippet
+from snippets.models import Snippet, Comment
 from snippets.views import top
 
 UserModel = get_user_model()
@@ -90,6 +90,11 @@ class SnippetDetailTest(TestCase):
             description="description222",
             created_by=self.user
         )
+        self.comment = Comment.objects.create(
+            text="comment1",
+            commented_by=self.user,
+            commented_to=self.snippet
+        )
 
     def test_should_use_expected_template(self):
         response = self.client.get(
@@ -99,6 +104,11 @@ class SnippetDetailTest(TestCase):
     def test_detail_page_returns_200_and_expected_head(self):
         response = self.client.get(f"/snippets/{self.snippet.id}/")
         self.assertContains(response, self.snippet.title, status_code=200)
+
+    def test_detail_page_returns_200_and_expected_comment(self):
+        """snippetに紐づいたコメントが含まれていることを確認する."""
+        response = self.client.get(f"/snippets/{self.snippet.id}/")
+        self.assertContains(response, self.comment.text, status_code=200)
 
 
 class EditSnippetTest(TestCase):

@@ -17,4 +17,16 @@
     
     <div class="source-code">{{ snippet.code|pygmentize:"python3" }}</div>
     <p>{{ snippet.description }}</p>
+
+    <div class = "comments-container">
+        <h3>コメント一覧</h3>
+        <div class = "comment-list">
+        {% for comment in comments %}
+        <div class = "comment"> 
+        <p class="comment-text">{{ comment.text }}</p>
+        <small class="comment-sub">by {{ comment.commented_by }} さん {{ comment.commented_at }}</small>
+        </div>
+        {% endfor %}
+        </div>
+    </div>
 {% endblock main %}
