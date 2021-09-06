@@ -40,7 +40,8 @@ INSTALLED_APPS = [
     'snippets.apps.SnippetsConfig',
     "django_extensions",
     "django_bootstrap5",
-    "pygments_renderer"
+    "pygments_renderer",
+    "accounts.apps.AccountsConfig"
 ]
 
 MIDDLEWARE = [
@@ -127,3 +128,14 @@ STATIC_URL = '/static/'
 # https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+# custom
+
+# ログインが必要な処理のときに未ログインだと飛ばされるURL
+LOGIN_URL = "/accounts/login/"
+# ログインした後にデフォルトで飛ぶ画面。nextパラメータが指定されているとそちらに飛ぶ(LoginViewの仕様？)
+# 設定しないとaccouts/profileみたいなところに飛ばされた
+LOGIN_REDIRECT_URL = "/"
+# ログアウトした時にリダイレクトするURL
+LOGOUT_REDIRECT_URL = "/"

@@ -21,4 +21,5 @@ urlpatterns = [
     path("", top, name="top"),  # ルートのスラッシュは省略する
     path("snippets/", include("snippets.urls")),  # snippets/urls.pyのルーティングを展開
     path('admin/', admin.site.urls),
+    path("accounts/", include("accounts.urls")),  # accounts/urls.pyのルーティングを展開
 ]
